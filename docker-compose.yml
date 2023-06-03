@@ -1,0 +1,37 @@
+# 编排配置
+
+version: '3.7'
+
+services:
+  my-db:
+    image: mysql:5.7.36
+    restart: on-failure
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf/my.cnf:/etc/my.cnf:ro
+    environment:
+      MYSQL_ROOT_PASSWORD: '12345678'
+      TZ: 'Asia/Shanghai'
+  my-app:
+    build:
+      context: ./app
+    image: issuesolved/my-app:1.0
+    restart: on-failure
+    links:
+      - my-db:mysql-service
+    depends_on:
+      - my-db
+    volumes:
+      - ./app:/app
+    deploy:
+      mode: replicated
+      replicas: 3
+  my-nginx:
+    image: nginx:1.22-alpine
+    restart: on-failure
+    ports:
+      - "80:80"
+    depends_on:
+      - my-app
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
